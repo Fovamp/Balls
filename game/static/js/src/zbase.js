@@ -4,5 +4,6 @@ class Balls_Game {
         this.id = id;
         this.$balls_game = $('#' + id);
         this.menu = new Balls_Game_Menu(this);
+        this.playground = new Balls_Game_Playground(this);
     }
 }
