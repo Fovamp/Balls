@@ -7,7 +7,6 @@ class Player extends Balls_Game_Object{
         this.y = y;
         this.vx = 0;
         this.vy = 0;
-        this.move_length = 0;
         this.radius = radius;
         this.color = color;
         this.speed = speed;
@@ -48,7 +47,6 @@ class Player extends Balls_Game_Object{
             this.vx = this.vy = 0;
         }else{
             let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
-            console.log(this.move_length, this.speed * this.timedelta / 1000);
             this.x += this.vx * moved;
             this.y += this.vy * moved;
             this.move_length -= moved;

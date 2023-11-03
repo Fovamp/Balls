@@ -53,7 +53,6 @@ let BALLS_GAME_OBJECTS = [];
 class Balls_Game_Object{
     constructor(){
         BALLS_GAME_OBJECTS.push(this);
-        this.start();
 
         this.has_called_start = false; // 是否执行过start
         this.timedelta = 0; // 距离上一帧的时间间隔(ms)
@@ -65,6 +64,7 @@ class Balls_Game_Object{
 
     }
     destroy(){ // 销毁
+        this.on_destroy();
         for (let i = 0; i < BALLS_GAME_OBJECTS.length; i ++ ){
             if(BALLS_GAME_OBJECTS[i] === this){
                 BALLS_GAME_OBJECTS.splice(i, 1);
@@ -89,7 +89,7 @@ let BALLS_GAME_ANIMATION = function(timestamp){
             obj.update();
         }
     }
-
+    last_timestamp = timestamp;
     requestAnimationFrame(BALLS_GAME_ANIMATION);
 }
 
@@ -103,7 +103,6 @@ class GameMap extends Balls_Game_Object{
         this.ctx = this.$canvas[0].getContext("2d");
         this.ctx.canvas.width = this.playground.width;
         this.ctx.canvas.height = this.playground.height;
-        console.log(this.ctx.canvas.width, this.ctx.canvas.height);
         this.playground.$playground.append(this.$canvas);
 
         this.start();
@@ -115,7 +114,7 @@ class GameMap extends Balls_Game_Object{
         this.render();
     }
     render(){
-        this.ctx.fillStyle = "rgba(0, 0, 0)";
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
     }
@@ -127,17 +126,54 @@ class Player extends Balls_Game_Object{
         this.ctx = this.playground.game_map.ctx;
         this.x = x;
         this.y = y;
+        this.vx = 0;
+        this.vy = 0;
+        this.move_length = 0;
         this.radius = radius;
         this.color = color;
         this.speed = speed;
         this.is_me = is_me;
-        this.eps = 0.1;
-        this.start();
+        this.eps = 0.01;
     }
     start(){
+        if(this.is_me){
+            this.add_listening_events();
+        }
+    }
+    add_listening_events(){
+        let outer = this;
+        this.playground.game_map.$canvas.on("contextmenu", function(){
+            return false;
+        });
+        this.playground.game_map.$canvas.mousedown(function(e){
+            if(e.which === 3){
+                outer.move_to(e.clientX, e.clientY);
+            }
+        });
+    }
+    get_dist(x1, y1, x2, y2) {
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 
+    move_to(tx, ty) {
+        this.move_length = this.get_dist(this.x, this.y, tx, ty);
+        let angle = Math.atan2(ty - this.y, tx - this.x);
+        this.vx = Math.cos(angle);
+        this.vy = Math.sin(angle);
     }
     update(){
+        if(this.move_length < this.eps){
+            this.move_length = 0;
+            this.vx = this.vy = 0;
+        }else{
+            let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+            console.log(this.move_length, this.speed * this.timedelta / 1000);
+            this.x += this.vx * moved;
+            this.y += this.vy * moved;
+            this.move_length -= moved;
+        }
         this.render();
     }
     render(){
@@ -153,12 +189,11 @@ class Balls_Game_Playground {
         this.$playground = $(`
 <div class="balls-game-playground">游戏界面</div>
 `);
-        //this.hide();
+        this.hide();
 
         this.root.$balls_game.append(this.$playground);
         this.width = this.$playground.width();
         this.height = this.$playground.height();
-        console.log(this.width, this.height);
         this.game_map = new GameMap(this);
         this.players = [];
         this.players.push(new Player(this,this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.15, true));
@@ -182,7 +217,7 @@ export class Balls_Game {
         console.log("create project");
         this.id = id;
         this.$balls_game = $('#' + id);
-        //this.menu = new Balls_Game_Menu(this);
+        this.menu = new Balls_Game_Menu(this);
         this.playground = new Balls_Game_Playground(this);
     }
 }
