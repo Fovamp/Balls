@@ -22,7 +22,6 @@ class Balls_Game_Object{
         }
     }
     on_destroy(){ // 在销毁之前的操作
-
     }
 }
 let last_timestamp;
