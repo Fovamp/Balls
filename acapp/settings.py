@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-x=2g3jqy*duyf7z+2efih%7%a4fj$!a%&1a!2evmq6v%#7%20t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["114.132.43.106"]
+ALLOWED_HOSTS = ["114.132.43.106", "fovamp.site"]
 
 
 # Application definition
