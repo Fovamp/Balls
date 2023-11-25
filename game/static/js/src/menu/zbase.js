@@ -18,6 +18,7 @@ class Balls_Game_Menu {
     </div>
 </div>
 `)
+    this.hide();
     this.root.$balls_game.append(this.$menu);
     this.$single_mode = this.$menu.find('.balls-game-menu-field-item-single-mode');
     this.$multi_mode = this.$menu.find('.balls-game-menu-field-item-multi-mode');
