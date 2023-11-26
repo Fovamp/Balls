@@ -6,7 +6,7 @@ from game.views.settings.logout import signout
 
 urlpatterns = [
     path("getinfo/", getinfo, name="settings_getinfo"),
-    path("login/.", signin, name="settings_login"),
+    path("login/", signin, name="settings_login"),
     path("logout/", signout, name="settings_logout"),
-    path("register", register, name="settings_register"),
+    path("register/", register, name="settings_register"),
 ]

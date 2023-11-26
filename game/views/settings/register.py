@@ -5,9 +5,10 @@ from game.models.player.player import Player
 
 def register(request):
     data = request.GET
-    username = data.get('username')
-    password = data.get('password')
-    password_confirm = data.get('password_confirm')
+    username = data.get("username")
+    password = data.get("password")
+    password_confirm = data.get("password_confirm")
+    print(username, password, password_confirm)
     if not username or not password:
         return JsonResponse({
             'result': "用户名和密码不能为空",

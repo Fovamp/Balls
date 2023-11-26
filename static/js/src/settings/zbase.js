@@ -40,12 +40,12 @@ class Settings{
                     <input type="text" placeholder="用户名">
                 </div>
             </div>
-            <div class="balls-game-settings-password ac-game-settings-password-first">
+            <div class="balls-game-settings-password balls-game-settings-password-first">
                 <div class="balls-game-settings-item">
                     <input type="password" placeholder="密码">
                 </div>
             </div>
-            <div class="balls-game-settings-password ac-game-settings-password-second">
+            <div class="balls-game-settings-password balls-game-settings-password-second">
                 <div class="balls-game-settings-item">
                     <input type="password" placeholder="确认密码">
                 </div>
@@ -63,7 +63,7 @@ class Settings{
             <br>
         </div>
         </div>`);
-        this.$login = this.$settings.find(".ac-game-settings-login");
+        this.$login = this.$settings.find(".balls-game-settings-login");
         this.$login_username = this.$login.find(".balls-game-settings-username input");
         this.$login_password = this.$login.find(".balls-game-settings-password input");
         this.$login_submit = this.$login.find(".balls-game-settings-submit button");
@@ -79,8 +79,7 @@ class Settings{
         this.$register_submit = this.$register.find(".balls-game-settings-submit button");
         this.$register_error_message = this.$register.find(".balls-game-settings-error-message");
         this.$register_login = this.$register.find(".balls-game-settings-option");
-
-        //this.$register.hide();
+        this.$register.hide();
         this.root.$balls_game.append(this.$settings);
         this.start();
 
@@ -105,16 +104,16 @@ class Settings{
     add_listening_events_register(){
         let outer = this;
         this.$register_login.click(function(){
-            outer.register();
+            outer.login();
         });
         this.$register_submit.click(function(){
-            outer.login_on_remote();
+            outer.register_on_remote();
         });
     }
     login_on_remote(){ // 在远程服务器登录用户
         let outer = this;
-        let username = this.$login_username.value();
-        let password = this.$login_password.value();
+        let username = this.$login_username.val();
+        let password = this.$login_password.val();
         this.$login_error_message.empty();
         $.ajax({
             url: "http://114.132.43.106:7000/settings/login/",
@@ -134,9 +133,9 @@ class Settings{
     }
     register_on_remote(){ // 在远程服务器注册
         let outer = this;
-        let username = this.$register_username.value();
-        let password = this.$register_password.value();
-        let password_confirm = this.$register_password_confirm.value();
+        let username = this.$register_username.val();
+        let password = this.$register_password.val();
+        let password_confirm = this.$register_password_confirm.val();
         this.$register_error_message.empty();
         $.ajax({
             url: "http://114.132.43.106:7000/settings/register/",
@@ -144,7 +143,7 @@ class Settings{
             data: {
                 username: username,
                 password: password,
-                password_confirm: passowrd_confirm,
+                password_confirm: password_confirm,
             },
             success: function(resp){
                 if(resp.result === "success"){
@@ -170,7 +169,7 @@ class Settings{
         let outer = this;
         $.ajax({
             url: "http://114.132.43.106:7000/settings/getinfo/",
-            type: GET"",
+            type: "GET",
             success: function(resp){
                 if(resp.result === "success"){
                     outer.username = resp.username;

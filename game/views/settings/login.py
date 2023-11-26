@@ -3,8 +3,8 @@ from django.http import JsonResponse
 
 def signin(request):
     data = request.GET
-    username = data.get('username')
-    photo = data.get('password')
+    username = data.get("username")
+    password = data.get("password")
     user = authenticate(username=username, password=password)
     if not user:
         return JsonResponse({

@@ -1,6 +1,5 @@
 export class Balls_Game {
     constructor(id){
-        console.log("create project");
         this.id = id;
         this.$balls_game = $('#' + id);
 

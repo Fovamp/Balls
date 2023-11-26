@@ -38,7 +38,7 @@ class Balls_Game_Menu {
             console.log("click multi mode");
         });
         this.$setting.click(function(){
-            console.log("click settings");
+            outer.root.settings.logout_on_remote();
         });
     }
 

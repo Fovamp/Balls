@@ -18,6 +18,7 @@ class Balls_Game_Menu {
     </div>
 </div>
 `)
+    this.hide();
     this.root.$balls_game.append(this.$menu);
     this.$single_mode = this.$menu.find('.balls-game-menu-field-item-single-mode');
     this.$multi_mode = this.$menu.find('.balls-game-menu-field-item-multi-mode');
@@ -37,7 +38,7 @@ class Balls_Game_Menu {
             console.log("click multi mode");
         });
         this.$setting.click(function(){
-            console.log("click settings");
+            outer.root.settings.logout_on_remote();
         });
     }
 
@@ -107,6 +108,13 @@ class GameMap extends Balls_Game_Object{
         this.start();
     }
     start(){
+        this.$canvas.focus();
+    }
+    resize(){
+        this.ctx.canvas.width = this.playground.width;
+        this.ctx.canvas.height = this.playground.height;
+        this.ctx.fillStyle = "rgba(0,0,0,1)";
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
     }
     update(){
@@ -131,7 +139,7 @@ class Particle extends Balls_Game_Object{
         this.color = color;
         this.speed = speed;
         this.friction = 0.9;
-        this.eps = 1;
+        this.eps = 0.01;
     }
     start(){
 
@@ -147,14 +155,15 @@ class Particle extends Balls_Game_Object{
         this.render();
     }
     render(){
+        let scale = this.playground.scale;
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }
 }
 class Player extends Balls_Game_Object{
-    constructor(playground, x, y, radius, color, speed, is_me){
+    constructor(playground, x, y, radius, color, speed, character, username, photo){
         super();
         this.playground = playground;
         this.ctx = this.playground.game_map.ctx;
@@ -169,18 +178,24 @@ class Player extends Balls_Game_Object{
         this.radius = radius;
         this.color = color;
         this.speed = speed;
-        this.is_me = is_me;
+        this.character = character;
         this.eps = 0.01;
         this.friction = 0.9;
         this.spent_time = 0;
         this.cur_skill = null;
+        this.username = username;
+        this.photo = photo;
+        if(this.character !== "robot"){
+            this.img = new Image();
+            this.img.src = this.photo;
+        }
     }
     start(){
-        if(this.is_me){
+        if(this.character === "me"){
             this.add_listening_events();
-        }else{
-            let tx = Math.random() * this.playground.width;
-            let ty = Math.random() * this.playground.height;
+        }else if(this.character === "robot"){
+            let tx = Math.random() * this.playground.width / this.playground.scale;
+            let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty);
         }
     }
@@ -193,10 +208,14 @@ class Player extends Balls_Game_Object{
         this.playground.game_map.$canvas.mousedown(function(e){
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if(e.which === 3){
-                outer.move_to(e.clientX - rect.left, e.clientY - rect.top);
+                let tx = (e.clientX - rect.left) / outer.playground.scale;
+                let ty = (e.clientY - rect.top) / outer.playground.scale;
+                outer.move_to(tx, ty);
             }else if(e.which === 1){
+                let tx = (e.clientX - rect.left) / outer.playground.scale;
+                let ty = (e.clientY - rect.top) / outer.playground.scale;
                 if(outer.cur_skill === "fireball"){
-                    outer.shoot_fireball(e.clientX - rect.left, e.clientY - rect.top);
+                    outer.shoot_fireball(tx, ty);
                     outer.cur_skill = null;
                 }
             }
@@ -210,12 +229,12 @@ class Player extends Balls_Game_Object{
     }
     shoot_fireball(tx, ty){
         let x = this.x, y = this.y;
-        let radius = this.playground.height * 0.01;
+        let radius = 0.01;
         let angle = Math.atan2(ty - this.y, tx - this.x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
-        let speed = this.playground.height * 0.5;
-        let move_length = this.playground.height * 1.5;
-        new FireBall(this.playground, this, x, y, radius, vx, vy, "orange", speed, move_length, this.playground.height * 0.01);
+        let speed = 0.5;
+        let move_length = 1.5;
+        new FireBall(this.playground, this, x, y, radius, vx, vy, "orange", speed, move_length, 0.01);
     }
     get_dist(x1, y1, x2, y2) {
         let dx = x2 - x1;
@@ -240,7 +259,7 @@ class Player extends Balls_Game_Object{
             new Particle(this.playground, x, y, radius, vx, vy, color, speed);
         }
         this.radius -= damage;
-        if(this.radius < 10){
+        if(this.radius < this.eps){
             this.destroy();
             return false;
         }
@@ -252,13 +271,18 @@ class Player extends Balls_Game_Object{
 
     }
     update(){
+        this.update_move();
+        this.render();
+    }
+    update_move(){
         this.spent_time += this.timedelta;
-        if(! this.is_me && this.spent_time > 4000 && Math.random() < 1 / 300.0){
+        if(this.character === "robot" && this.spent_time > 4000 && Math.random() < 1 / 300.0){
             let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)];
-
-            let tx = player.x + player.speed * this.vx * this.timedelta / 1000 * 0.3;
-            let ty = player.y + player.speed * this.vy * this.timedelta / 1000 * 0.3;
-            this.shoot_fireball(tx, ty);
+            if(this.playground != this){
+                let tx = player.x + player.speed * this.vx * this.timedelta / 1000 * 0.3;
+                let ty = player.y + player.speed * this.vy * this.timedelta / 1000 * 0.3;
+                this.shoot_fireball(tx, ty);
+            }
         }
         if(this.damage_speed > this.eps){
             this.vx = this.vy = 0;
@@ -270,9 +294,10 @@ class Player extends Balls_Game_Object{
             if(this.move_length < this.eps){
                 this.move_length = 0;
                 this.vx = this.vy = 0;
-                if(!this.is_me){
-                    let tx = Math.random() * this.playground.width;
-                    let ty = Math.random() * this.playground.height;
+                if(this.character === "robot"){
+                    let tx = Math.random() * this.playground.width / this.playground.scale;
+                    let ty = Math.random() * this.playground.height / this.playground.scale;
+                    console.log(tx, ty, this.playground.width, this.playground.height, this.playground.scale);
                     this.move_to(tx,ty);
                 }
             }else{
@@ -282,13 +307,24 @@ class Player extends Balls_Game_Object{
                 this.move_length -= moved;
             }
         }
-        this.render();
     }
     render(){
-        this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        this.ctx.fillStyle = this.color;
-        this.ctx.fill();
+        let scale = this.playground.scale;
+        if(this.character !== "robot"){
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
+            this.ctx.stroke();
+            this.ctx.clip();
+            this.ctx.drawImage(this.img, (this.x - this.radius) * scale, (this.y - this.radius) * scale, this.radius * 2 * scale, this.radius * 2 * scale);
+            this.ctx.restore();
+
+        }else{
+            this.ctx.beginPath();
+            this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
+            this.ctx.fillStyle = this.color;
+            this.ctx.fill();
+        }
     }
 }
 class FireBall extends Balls_Game_Object {
@@ -306,13 +342,13 @@ class FireBall extends Balls_Game_Object {
         this.speed = speed;
         this.move_length = move_length;
         this.damage = damage;
-        this.eps = 0.1;
+        this.eps = 0.01;
     }
     start(){
 
     }
     update(){
-        if(this.move_length < 10){
+        if(this.move_length < this.eps){
             this.destroy();
             return false;
         }
@@ -346,8 +382,9 @@ class FireBall extends Balls_Game_Object {
         return false;
     }
     render(){
+        let scale = this.playground.scale;
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }
@@ -359,7 +396,7 @@ class Balls_Game_Playground {
 <div class="balls-game-playground"></div>
 `);
         this.hide();
-
+        this.root.$balls_game.append(this.$playground);
         this.start()
     }
     get_random_color(){
@@ -367,8 +404,21 @@ class Balls_Game_Playground {
         return colors[Math.floor(Math.random() * 5)];
     }
     start(){
+        let outer = this;
+        $(window).on(`resize`, function(){
+            console.log("resize");
+            outer.resize();
+        });
 
-
+    }
+    resize(){
+        this.width = this.$playground.width();
+        this.height = this.$playground.height();
+        let unit = Math.min(this.width / 16, this.height / 9);
+        this.width = unit * 16;
+        this.height = unit * 9;
+        this.scale = this.height;
+        if(this.game_map) this.game_map.resize();
     }
     hide(){
         this.$playground.hide();
@@ -376,24 +426,224 @@ class Balls_Game_Playground {
     show(){
         this.$playground.show();
 
-        this.root.$balls_game.append(this.$playground);
         this.width = this.$playground.width();
         this.height = this.$playground.height();
+        this.resize();
+
         this.game_map = new GameMap(this);
         this.players = [];
-        this.players.push(new Player(this,this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.15, true));
-
+        this.players.push(new Player(this,this.width / 2 / this.scale, 0.5, 0.05, "white", 0.15, "me", this.root.settings.username, this.root.settings.photo));
 
         for (let i = 0; i < 5; i ++ ){
-            this.players.push(new Player(this,this.width / 2, this.height / 2, this.height * 0.05, this.get_random_color(), this.height * 0.15, false));
+            this.players.push(new Player(this,this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "robot"));
         }
+    }
+}
+class Settings{
+    constructor(root){
+        this.root = root;
+        this.username = "";
+        this.photo = "";
+        this.$settings = $(`
+        <div class="balls-game-settings">
+        <div class="balls-game-settings-login">
+            <div class="balls-game-settings-title">
+                登录
+            </div>
+            <div class="balls-game-settings-username">
+                <div class="balls-game-settings-item">
+                    <input type="text" placeholder="用户名">
+                </div>
+            </div>
+            <div class="balls-game-settings-password">
+                <div class="balls-game-settings-item">
+                    <input type="password" placeholder="密码">
+                </div>
+            </div>
+            <div class="balls-game-settings-submit">
+                <div class="balls-game-settings-item">
+                    <button>登录</button>
+                </div>
+            </div>
+            <div class="balls-game-settings-error-message">
+            </div>
+            <div class="balls-game-settings-option">
+                注册
+            </div>
+            <br>
+        </div>
+        <div class="balls-game-settings-register">
+            <div class="balls-game-settings-title">
+                注册
+            </div>
+            <div class="balls-game-settings-username">
+                <div class="balls-game-settings-item">
+                    <input type="text" placeholder="用户名">
+                </div>
+            </div>
+            <div class="balls-game-settings-password balls-game-settings-password-first">
+                <div class="balls-game-settings-item">
+                    <input type="password" placeholder="密码">
+                </div>
+            </div>
+            <div class="balls-game-settings-password balls-game-settings-password-second">
+                <div class="balls-game-settings-item">
+                    <input type="password" placeholder="确认密码">
+                </div>
+            </div>
+            <div class="balls-game-settings-submit">
+                <div class="balls-game-settings-item">
+                    <button>注册</button>
+                </div>
+            </div>
+            <div class="balls-game-settings-error-message">
+            </div>
+            <div class="balls-game-settings-option">
+                登录
+            </div>
+            <br>
+        </div>
+        </div>`);
+        this.$login = this.$settings.find(".balls-game-settings-login");
+        this.$login_username = this.$login.find(".balls-game-settings-username input");
+        this.$login_password = this.$login.find(".balls-game-settings-password input");
+        this.$login_submit = this.$login.find(".balls-game-settings-submit button");
+        this.$login_error_message = this.$login.find(".balls-game-settings-error-message");
+        this.$login_register = this.$login.find(".balls-game-settings-option");
+
+        //this.$login.hide();
+
+        this.$register = this.$settings.find(".balls-game-settings-register");
+        this.$register_username = this.$register.find(".balls-game-settings-username input");
+        this.$register_password = this.$register.find(".balls-game-settings-password-first input");
+        this.$register_password_confirm = this.$register.find(".balls-game-settings-password-second input");
+        this.$register_submit = this.$register.find(".balls-game-settings-submit button");
+        this.$register_error_message = this.$register.find(".balls-game-settings-error-message");
+        this.$register_login = this.$register.find(".balls-game-settings-option");
+        this.$register.hide();
+        this.root.$balls_game.append(this.$settings);
+        this.start();
+
+    }
+    start(){
+        this.getinfo();
+        this.add_listening_events();
+    }
+    add_listening_events(){
+        this.add_listening_events_login();
+        this.add_listening_events_register();
+    }
+    add_listening_events_login(){
+        let outer = this;
+        this.$login_register.click(function(){
+            outer.register();
+        });
+        this.$login_submit.click(function(){
+            outer.login_on_remote();
+        });
+    }
+    add_listening_events_register(){
+        let outer = this;
+        this.$register_login.click(function(){
+            outer.login();
+        });
+        this.$register_submit.click(function(){
+            outer.register_on_remote();
+        });
+    }
+    login_on_remote(){ // 在远程服务器登录用户
+        let outer = this;
+        let username = this.$login_username.val();
+        let password = this.$login_password.val();
+        this.$login_error_message.empty();
+        $.ajax({
+            url: "http://114.132.43.106:7000/settings/login/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+            },
+            success: function(resp){
+                if(resp.result === "success"){
+                    location.reload();
+                }else{
+                    outer.$login_error_message.html(resp.result);
+                }
+            }
+        });
+    }
+    register_on_remote(){ // 在远程服务器注册
+        let outer = this;
+        let username = this.$register_username.val();
+        let password = this.$register_password.val();
+        let password_confirm = this.$register_password_confirm.val();
+        this.$register_error_message.empty();
+        $.ajax({
+            url: "http://114.132.43.106:7000/settings/register/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+                password_confirm: password_confirm,
+            },
+            success: function(resp){
+                if(resp.result === "success"){
+                    location.reload();
+                }else{
+                    outer.$register_error_message.html(resp.result);
+                }
+            }
+        });
+    }
+    logout_on_remote(){
+        $.ajax({
+            url: "http://114.132.43.106:7000/settings/logout/",
+            type: "GET",
+            success: function(resp){
+                if(resp.result === "success"){
+                    location.reload();
+                }
+            }
+        });
+    }
+    getinfo(){
+        let outer = this;
+        $.ajax({
+            url: "http://114.132.43.106:7000/settings/getinfo/",
+            type: "GET",
+            success: function(resp){
+                if(resp.result === "success"){
+                    outer.username = resp.username;
+                    outer.photo = resp.photo;
+                    outer.hide();
+                    outer.root.menu.show();
+                }else{
+                    outer.login();
+                }
+            }
+        });
+    }
+    register(){
+        this.$login.hide();
+        this.$register.show();
+    }
+    login(){
+        this.$register.hide();
+        this.$login.show();
+    }
+    hide(){
+        this.$settings.hide();
+    }
+    show(){
+        this.$settings.show();
     }
 }
 export class Balls_Game {
     constructor(id){
-        console.log("create project");
         this.id = id;
         this.$balls_game = $('#' + id);
+
+        this.settings = new Settings(this);
         this.menu = new Balls_Game_Menu(this);
         this.playground = new Balls_Game_Playground(this);
     }
