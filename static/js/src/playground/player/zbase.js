@@ -97,6 +97,7 @@ class Player extends Balls_Game_Object{
         this.radius -= damage;
         if(this.radius < this.eps){
             this.destroy();
+            this.playground.remove(this);
             return false;
         }
         this.damage_x = Math.cos(angle);
@@ -133,7 +134,6 @@ class Player extends Balls_Game_Object{
                 if(this.character === "robot"){
                     let tx = Math.random() * this.playground.width / this.playground.scale;
                     let ty = Math.random() * this.playground.height / this.playground.scale;
-                    console.log(tx, ty, this.playground.width, this.playground.height, this.playground.scale);
                     this.move_to(tx,ty);
                 }
             }else{

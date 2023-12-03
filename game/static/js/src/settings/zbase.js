@@ -116,7 +116,7 @@ class Settings{
         let password = this.$login_password.val();
         this.$login_error_message.empty();
         $.ajax({
-            url: "http://114.132.43.106:7000/settings/login/",
+            url: "http://fovamp.site:7000/settings/login/",
             type: "GET",
             data: {
                 username: username,
@@ -138,7 +138,7 @@ class Settings{
         let password_confirm = this.$register_password_confirm.val();
         this.$register_error_message.empty();
         $.ajax({
-            url: "http://114.132.43.106:7000/settings/register/",
+            url: "http://fovamp.site:7000/settings/register/",
             type: "GET",
             data: {
                 username: username,
@@ -156,7 +156,7 @@ class Settings{
     }
     logout_on_remote(){
         $.ajax({
-            url: "http://114.132.43.106:7000/settings/logout/",
+            url: "http://fovamp.site:7000/settings/logout/",
             type: "GET",
             success: function(resp){
                 if(resp.result === "success"){
@@ -168,7 +168,7 @@ class Settings{
     getinfo(){
         let outer = this;
         $.ajax({
-            url: "http://114.132.43.106:7000/settings/getinfo/",
+            url: "http://fovamp.site:7000/settings/getinfo/",
             type: "GET",
             success: function(resp){
                 if(resp.result === "success"){

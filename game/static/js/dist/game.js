@@ -32,10 +32,11 @@ class Balls_Game_Menu {
         let outer = this;
         this.$single_mode.click(function(){
             outer.hide();
-            outer.root.playground.show();
+            outer.root.playground.show("single mode");
         });
         this.$multi_mode.click(function(){
-            console.log("click multi mode");
+            outer.hide();
+            outer.root.playground.show("multi mode");
         });
         this.$setting.click(function(){
             outer.root.settings.logout_on_remote();
@@ -261,6 +262,7 @@ class Player extends Balls_Game_Object{
         this.radius -= damage;
         if(this.radius < this.eps){
             this.destroy();
+            this.playground.remove(this);
             return false;
         }
         this.damage_x = Math.cos(angle);
@@ -297,7 +299,6 @@ class Player extends Balls_Game_Object{
                 if(this.character === "robot"){
                     let tx = Math.random() * this.playground.width / this.playground.scale;
                     let ty = Math.random() * this.playground.height / this.playground.scale;
-                    console.log(tx, ty, this.playground.width, this.playground.height, this.playground.scale);
                     this.move_to(tx,ty);
                 }
             }else{
@@ -389,6 +390,17 @@ class FireBall extends Balls_Game_Object {
         this.ctx.fill();
     }
 }
+class MultiPlayerSocket{
+    constructor(playground){
+        this.playground = playground;
+
+        this.ws = new WebSocket("wss://fovamp.site:7000/wss/multiplayer/");
+        this.start();
+    }
+    start(){
+
+    }
+}
 class Balls_Game_Playground {
     constructor(root){
         this.root = root;
@@ -420,10 +432,17 @@ class Balls_Game_Playground {
         this.scale = this.height;
         if(this.game_map) this.game_map.resize();
     }
+    remove(item){
+        for(let i = 0; i < this.players.length; i ++ ){
+            let player = this.players[i];
+            if(player === item)
+                this.players.splice(i, 1);
+        }
+    }
     hide(){
         this.$playground.hide();
     }
-    show(){
+    show(mode){
         this.$playground.show();
 
         this.width = this.$playground.width();
@@ -433,9 +452,13 @@ class Balls_Game_Playground {
         this.game_map = new GameMap(this);
         this.players = [];
         this.players.push(new Player(this,this.width / 2 / this.scale, 0.5, 0.05, "white", 0.15, "me", this.root.settings.username, this.root.settings.photo));
-
-        for (let i = 0; i < 5; i ++ ){
-            this.players.push(new Player(this,this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "robot"));
+        if(mode === "single mode"){
+            for (let i = 0; i < 5; i ++ ){
+                this.players.push(new Player(this,this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "robot"));
+            }
+        }
+        else if(mode === "multi mode"){
+            this.mps = new MultiPlayerSocket(this);
         }
     }
 }
@@ -557,7 +580,7 @@ class Settings{
         let password = this.$login_password.val();
         this.$login_error_message.empty();
         $.ajax({
-            url: "http://114.132.43.106:7000/settings/login/",
+            url: "http://fovamp.site:7000/settings/login/",
             type: "GET",
             data: {
                 username: username,
@@ -579,7 +602,7 @@ class Settings{
         let password_confirm = this.$register_password_confirm.val();
         this.$register_error_message.empty();
         $.ajax({
-            url: "http://114.132.43.106:7000/settings/register/",
+            url: "http://fovamp.site:7000/settings/register/",
             type: "GET",
             data: {
                 username: username,
@@ -597,7 +620,7 @@ class Settings{
     }
     logout_on_remote(){
         $.ajax({
-            url: "http://114.132.43.106:7000/settings/logout/",
+            url: "http://fovamp.site:7000/settings/logout/",
             type: "GET",
             success: function(resp){
                 if(resp.result === "success"){
@@ -609,7 +632,7 @@ class Settings{
     getinfo(){
         let outer = this;
         $.ajax({
-            url: "http://114.132.43.106:7000/settings/getinfo/",
+            url: "http://fovamp.site:7000/settings/getinfo/",
             type: "GET",
             success: function(resp){
                 if(resp.result === "success"){

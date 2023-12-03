@@ -29,10 +29,17 @@ class Balls_Game_Playground {
         this.scale = this.height;
         if(this.game_map) this.game_map.resize();
     }
+    remove(item){
+        for(let i = 0; i < this.players.length; i ++ ){
+            let player = this.players[i];
+            if(player === item)
+                this.players.splice(i, 1);
+        }
+    }
     hide(){
         this.$playground.hide();
     }
-    show(){
+    show(mode){
         this.$playground.show();
 
         this.width = this.$playground.width();
@@ -42,9 +49,13 @@ class Balls_Game_Playground {
         this.game_map = new GameMap(this);
         this.players = [];
         this.players.push(new Player(this,this.width / 2 / this.scale, 0.5, 0.05, "white", 0.15, "me", this.root.settings.username, this.root.settings.photo));
-
-        for (let i = 0; i < 5; i ++ ){
-            this.players.push(new Player(this,this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "robot"));
+        if(mode === "single mode"){
+            for (let i = 0; i < 5; i ++ ){
+                this.players.push(new Player(this,this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "robot"));
+            }
+        }
+        else if(mode === "multi mode"){
+            this.mps = new MultiPlayerSocket(this);
         }
     }
 }
